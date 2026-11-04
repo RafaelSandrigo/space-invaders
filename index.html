@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>Nebula Siege</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+    <div id="screen-wrap">
+      <canvas id="screen" aria-label="Tela do jogo Nebula Siege"></canvas>
+      <canvas id="glow" aria-hidden="true"></canvas>
+      <div class="crt" aria-hidden="true"></div>
+    </div>
+
+    <p id="help">
+      <kbd>A</kbd><kbd>D</kbd> ou setas: mover &nbsp;·&nbsp; <kbd>ESPAÇO</kbd> atirar &nbsp;·&nbsp;
+      <kbd>P</kbd> pausa &nbsp;·&nbsp; <kbd>M</kbd> som &nbsp;·&nbsp; <kbd>ENTER</kbd> iniciar
+    </p>
+
+    <div id="touch">
+      <button data-k="left" aria-label="Esquerda">◀</button>
+      <button data-k="fire" class="fire" aria-label="Atirar">FOGO</button>
+      <button data-k="right" aria-label="Direita">▶</button>
+    </div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+:root {
+  --bg: #05040c;
+  --bg-glow: #160d2e;
+  --frame-1: #2a1d55;
+  --frame-2: #0b0818;
+  --magenta: #ff4fd8;
+  --cyan: #4fe8ff;
+  --text: #b8b0ff;
+  --px: 3px; /* tamanho de 1 pixel do jogo na tela (ajustado pelo JS) */
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  background: radial-gradient(ellipse at 50% 30%, var(--bg-glow) 0%, var(--bg) 70%) fixed;
+  background-color: var(--bg);
+  color: var(--text);
+  font-family: "Press Start 2P", ui-monospace, monospace;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 16px;
+}
+
+/* ---------- Tela ---------- */
+#screen-wrap {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: calc(var(--px) * 3);
+  background: #000;
+  box-shadow:
+    0 0 0 calc(var(--px) * 1) var(--frame-1),
+    0 0 0 calc(var(--px) * 2) var(--frame-2),
+    0 0 40px rgba(255, 79, 216, 0.22),
+    0 0 90px rgba(79, 232, 255, 0.14);
+}
+
+#screen-wrap canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  image-rendering: crisp-edges;
+  image-rendering: pixelated;
+}
+
+/* camada de brilho (bloom) — cópia borrada da tela somada por cima */
+#glow {
+  pointer-events: none;
+  mix-blend-mode: screen;
+  opacity: 0.85;
+  filter: blur(calc(var(--px) * 1.6)) saturate(1.6) brightness(1.35);
+}
+
+/* scanlines + vinheta de CRT */
+.crt {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--px) * 0.55),
+      rgba(0, 0, 0, 0.26) calc(var(--px) * 0.55),
+      rgba(0, 0, 0, 0.26) var(--px)
+    ),
+    radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.55) 100%);
+  animation: flicker 5s infinite steps(1);
+}
+
+@keyframes flicker {
+  0%, 100% { opacity: 1; }
+  47% { opacity: 0.93; }
+  48% { opacity: 1; }
+  82% { opacity: 0.96; }
+}
+
+/* ---------- Ajuda ---------- */
+#help {
+  font-size: 9px;
+  line-height: 2.2;
+  text-align: center;
+  opacity: 0.8;
+  max-width: 100%;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px 5px;
+  margin: 0 2px;
+  font: inherit;
+  color: #fff;
+  background: #1a1233;
+  border: 2px solid var(--frame-1);
+  border-bottom-color: #000;
+  border-right-color: #000;
+}
+
+/* ---------- Controles de toque ---------- */
+#touch {
+  display: none;
+  gap: 12px;
+  width: 100%;
+  max-width: 420px;
+  justify-content: space-between;
+}
+
+#touch button {
+  flex: 1;
+  height: 64px;
+  font: inherit;
+  font-size: 18px;
+  color: #fff;
+  background: #1a1233;
+  border: 3px solid var(--frame-1);
+  border-bottom-color: #000;
+  border-right-color: #000;
+  touch-action: none;
+}
+
+#touch button.fire {
+  flex: 1.4;
+  font-size: 12px;
+  color: #000;
+  background: var(--magenta);
+  border-color: #ffc2f2;
+  border-bottom-color: #8a1a70;
+  border-right-color: #8a1a70;
+}
+
+#touch button.active { filter: brightness(1.5); transform: translateY(2px); }
+
+@media (pointer: coarse) {
+  #touch { display: flex; }
+  #help { display: none; }
+}
