@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="thumbnail.png" alt="Nebula Siege: logo em pixel art ao lado de uma partida com a formação alienígena, escudos e a nave do jogador" width="100%">
+  <img src="thumbnail.png" alt="Pixel Vaders: logo em pixel art ao lado de uma partida com a formação alienígena, escudos e a nave do jogador" width="100%">
 </p>
 
-<h1 align="center">NEBULA SIEGE</h1>
+<h1 align="center">PIXEL VADERS</h1>
 
 <p align="center">
   <b>Defenda a órbita. Cada pixel explode.</b><br>

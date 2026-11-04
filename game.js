@@ -1,6 +1,6 @@
 'use strict';
 /*
- * NEBULA SIEGE — shooter fixo no estilo dos arcades de 1978.
+ * PIXEL VADERS — shooter fixo no estilo dos arcades de 1978.
  * Mecânica fiel ao clássico do gênero:
  *  - formação 11 x 5, um alienígena se move por frame (a marcha acelera
  *    naturalmente conforme a formação diminui)
@@ -871,8 +871,8 @@
     c.width = W; c.height = 50;
     const g = c.getContext('2d');
     g.imageSmoothingEnabled = false;
-    drawText(g, 'NEBULA', W / 2, 1, '#fff', 'center', 3);
-    drawText(g, 'SIEGE', W / 2, 27, '#fff', 'center', 3);
+    drawText(g, 'PIXEL', W / 2, 1, '#fff', 'center', 3);
+    drawText(g, 'VADERS', W / 2, 27, '#fff', 'center', 3);
     const d = g.getImageData(0, 0, W, 50).data;
     titleParts = [];
     for (let y = 0; y < 50; y++) for (let x = 0; x < W; x++) {
