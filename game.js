@@ -31,8 +31,73 @@
   const ROW_TYPE = [0, 1, 1, 2, 2];
   const STEP = 1 / 60;
   const MAXP = 5000;
-  const FONT = '"Press Start 2P", ui-monospace, monospace';
-  const HI_KEY = 'nebulaSiege.hi';
+
+  // ---------------------------------------------------------------- integração Bitman
+  // O jogo roda num iframe de origem opaca: o destino é "*" e quem valida é o Bitman.
+  const EMBEDDED = window.parent !== window;
+  let finished = false;
+  function bitman(msg) {
+    if (!EMBEDDED) return;
+    try { window.parent.postMessage({ source: 'bitman', version: 1, ...msg }, '*'); } catch (e) { /* sem parent */ }
+  }
+  // envia o score final uma única vez por partida
+  function finishGame(points) {
+    if (finished) return;
+    finished = true;
+    bitman({ type: 'game-over', score: Math.max(0, Math.floor(points)) });
+  }
+
+  // ---------------------------------------------------------------- fonte bitmap 5x7 (sem fontes externas)
+  const GLYPHS = {
+    A: '01110100011000111111100011000110001', B: '11110100011000111110100011000111110',
+    C: '01110100011000010000100001000101110', D: '11110100011000110001100011000111110',
+    E: '11111100001000011110100001000011111', F: '11111100001000011110100001000010000',
+    G: '01110100011000010111100011000101111', H: '10001100011000111111100011000110001',
+    I: '01110001000010000100001000010001110', J: '00111000100001000010000101001001100',
+    K: '10001100101010011000101001001010001', L: '10000100001000010000100001000011111',
+    M: '10001110111010110101100011000110001', N: '10001100011100110101100111000110001',
+    O: '01110100011000110001100011000101110', P: '11110100011000111110100001000010000',
+    Q: '01110100011000110001101011001001101', R: '11110100011000111110101001001010001',
+    S: '01111100001000001110000010000111110', T: '11111001000010000100001000010000100',
+    U: '10001100011000110001100011000101110', V: '10001100011000110001100010101000100',
+    W: '10001100011000110101101011010101010', X: '10001100010101000100010101000110001',
+    Y: '10001100010101000100001000010000100', Z: '11111000010001000100010001000011111',
+    0: '01110100011001110101110011000101110', 1: '00100011000010000100001000010001110',
+    2: '01110100010000100010001000100011111', 3: '11111000100010000010000011000101110',
+    4: '00010001100101010010111110001000010', 5: '11111100001111000001000011000101110',
+    6: '00110010001000011110100011000101110', 7: '11111000010001000100010000100001000',
+    8: '01110100011000101110100011000101110', 9: '01110100011000101111000010001001100',
+    '=': '00000000001111100000111110000000000', '?': '01110100010000100010001000000000100',
+    '!': '00100001000010000100001000000000100', ':': '00000011000110000000011000110000000',
+    '-': '00000000000000011111000000000000000', '.': '00000000000000000000000000110001100',
+    '+': '00000001000010011111001000010000000',
+  };
+  const glyphCache = new Map();
+  function glyph(ch, color) {
+    const key = ch + color;
+    let c = glyphCache.get(key);
+    if (c) return c;
+    const bits = GLYPHS[ch];
+    c = document.createElement('canvas');
+    c.width = 5; c.height = 7;
+    if (bits) {
+      const g = c.getContext('2d');
+      g.fillStyle = color;
+      for (let i = 0; i < 35; i++) if (bits[i] === '1') g.fillRect(i % 5, (i / 5) | 0, 1, 1);
+    }
+    glyphCache.set(key, c);
+    return c;
+  }
+  function drawText(g, s, x, y, color = '#fff', align = 'left', scale = 1) {
+    s = String(s).toUpperCase();
+    const w = s.length * 6 * scale - scale;
+    let cx = Math.round(align === 'center' ? x - w / 2 : align === 'right' ? x - w : x);
+    y = Math.round(y);
+    for (const ch of s) {
+      if (ch !== ' ') g.drawImage(glyph(ch, color), cx, y, 5 * scale, 7 * scale);
+      cx += 6 * scale;
+    }
+  }
 
   // ---------------------------------------------------------------- canvas
   const canvas = document.getElementById('screen');
@@ -366,7 +431,7 @@
   let state = 'title'; // title | playing | dying | waveclear | gameover
   let paused = false;
   let frame = 0, stateTimer = 0;
-  let score = 0, hi = loadHi(), lives = 3, wave = 1, extraGiven = false, shotsFired = 0;
+  let score = 0, hi = 0, lives = 3, wave = 1, extraGiven = false, shotsFired = 0;
   let aliens = [], grid = [], aliveCount = 0;
   let fm = { dx: 1, dropping: false, cursor: 0 };
   let marchNote = 0;
@@ -379,9 +444,6 @@
   let popups = [];
   let shake = 0, flash = 0;
   let titleParts = [];
-
-  function loadHi() { try { return parseInt(localStorage.getItem(HI_KEY), 10) || 0; } catch (e) { return 0; } }
-  function saveHi() { try { localStorage.setItem(HI_KEY, String(hi)); } catch (e) { /* sem storage */ } }
 
   // ---------------------------------------------------------------- escudos
   const BW = 22, BH = 16;
@@ -749,7 +811,8 @@
   function gameOver() {
     state = 'gameover';
     stateTimer = 0;
-    if (score >= hi) { hi = score; saveHi(); }
+    if (score >= hi) hi = score;
+    finishGame(score);
   }
 
   // ---------------------------------------------------------------- input
@@ -764,7 +827,8 @@
   function pressStart() {
     Sfx.init();
     if (state === 'title') startGame();
-    else if (state === 'gameover' && stateTimer > 60) startGame();
+    // no Bitman, "Jogar de novo" é feito pela plataforma (uma partida = um game-over)
+    else if (state === 'gameover' && stateTimer > 60 && !EMBEDDED) startGame();
   }
   function togglePause() {
     if (state === 'title' || state === 'gameover') return;
@@ -797,7 +861,7 @@
     btn.addEventListener('pointerleave', off);
     btn.addEventListener('pointercancel', off);
   }
-  wrap.addEventListener('pointerdown', () => pressStart());
+  wrap.addEventListener('pointerdown', () => { try { window.focus(); } catch (e) { /* ok */ } pressStart(); });
 
   // ---------------------------------------------------------------- título com partículas
   const TITLE_Y = 38;
@@ -806,21 +870,15 @@
     const c = document.createElement('canvas');
     c.width = W; c.height = 50;
     const g = c.getContext('2d');
-    g.font = `16px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'top'; g.fillStyle = '#fff';
-    g.fillText('NEBULA', W / 2, 2);
-    g.fillText('SIEGE', W / 2, 26);
+    g.imageSmoothingEnabled = false;
+    drawText(g, 'NEBULA', W / 2, 1, '#fff', 'center', 3);
+    drawText(g, 'SIEGE', W / 2, 27, '#fff', 'center', 3);
     const d = g.getImageData(0, 0, W, 50).data;
-    const old = titleParts;
     titleParts = [];
     for (let y = 0; y < 50; y++) for (let x = 0; x < W; x++) {
       if (d[(y * W + x) * 4 + 3] < 140) continue;
-      const c1 = y < 22 ? mix('#ff4fd8', '#a07cff', x / W) : mix('#4fe8ff', '#7dff6a', x / W);
-      const prev = old[titleParts.length];
-      titleParts.push({
-        tx: x, ty: y + TITLE_Y,
-        x: prev ? prev.x : rand(W), y: prev ? prev.y : rand(H),
-        vx: 0, vy: 0, c: c1,
-      });
+      const c1 = y < 24 ? mix('#ff4fd8', '#a07cff', x / W) : mix('#4fe8ff', '#7dff6a', x / W);
+      titleParts.push({ tx: x, ty: y + TITLE_Y, x: rand(W), y: rand(H), vx: 0, vy: 0, c: c1 });
     }
   }
   function updateTitle() {
@@ -860,9 +918,6 @@
       text(label, 80, y, col);
     });
     if ((frame >> 5) % 2 === 0) text('PRESSIONE ENTER', W / 2, 202, '#ffffff', 'center');
-  }
-  if (document.fonts && document.fonts.load) {
-    document.fonts.load(`16px ${FONT}`).then(buildTitle).catch(() => {});
   }
   buildTitle();
 
@@ -970,13 +1025,7 @@
   }
 
   // ---------------------------------------------------------------- render
-  function text(s, x, y, color = '#fff', align = 'left', size = 8) {
-    ctx.font = `${size}px ${FONT}`;
-    ctx.textAlign = align;
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = color;
-    ctx.fillText(s, Math.round(x), Math.round(y));
-  }
+  const text = (s, x, y, color, align, scale) => drawText(ctx, s, x, y, color, align, scale);
 
   function drawAlienShot(s) {
     const x = Math.round(s.x), y = Math.round(s.y), a = (s.anim >> 2) & 3;
@@ -1073,7 +1122,8 @@
       overlayBox(96, 58);
       text('FIM DE JOGO', W / 2, 106, '#ff4fd8', 'center');
       if (score >= hi && score > 0) text('NOVO RECORDE!', W / 2, 122, '#ffd23f', 'center');
-      if (stateTimer > 60 && (frame >> 5) % 2 === 0) text('ENTER: JOGAR', W / 2, 138, '#ffffff', 'center');
+      if (!EMBEDDED && stateTimer > 60 && (frame >> 5) % 2 === 0) text('ENTER: JOGAR', W / 2, 138, '#ffffff', 'center');
+      if (EMBEDDED) text(`PONTOS: ${score}`, W / 2, 138, '#ffffff', 'center');
     }
     if (paused) {
       overlayBox(108, 32);
@@ -1114,4 +1164,6 @@
     requestAnimationFrame(loop);
   }
   requestAnimationFrame(loop);
+
+  bitman({ type: 'ready' });
 })();

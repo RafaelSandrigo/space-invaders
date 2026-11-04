@@ -16,7 +16,8 @@ html, body {
   background: radial-gradient(ellipse at 50% 30%, var(--bg-glow) 0%, var(--bg) 70%) fixed;
   background-color: var(--bg);
   color: var(--text);
-  font-family: "Press Start 2P", ui-monospace, monospace;
+  font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Courier New", monospace;
+  font-weight: 700;
   overflow: hidden;
   touch-action: none;
   user-select: none;
@@ -92,8 +93,10 @@ html, body {
 
 /* ---------- Ajuda ---------- */
 #help {
-  font-size: 9px;
-  line-height: 2.2;
+  font-size: 12px;
+  line-height: 2;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
   text-align: center;
   opacity: 0.8;
   max-width: 100%;
